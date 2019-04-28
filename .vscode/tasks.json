@@ -17,6 +17,8 @@
             "type": "process",
             "args": [
                 "publish",
+                "-c",
+                "Release",
                 "${workspaceFolder}/Kite/Kite.csproj"
             ],
             "problemMatcher": "$tsc"
