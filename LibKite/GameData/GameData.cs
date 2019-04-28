@@ -114,68 +114,61 @@ namespace LibKite.GameData
         /// </summary>
         public static GameDataMap<string, ServerStructure> Servers;
 
-        static GameData()
-        {
-            // Cache the XMLs because Resource accessors are slow
-            // RawObjectsXML = Resources.Objects;
-            // RawPacketsXML = Resources.Packets;
-            // RawTilesXML = Resources.Tiles;
-        }
-
         public static void Load()
         {
+            bool hadError = false;
             Parallel.Invoke(
             () =>
             {
                 try
                 {
                     Items = new GameDataMap<ushort, ItemStructure>(ItemStructure.Load(XDocument.Load("Objects.xml")));
-                    PluginUtils.Log("GameData", "loaded items from file!");
+                    PluginUtils.Log("GameData", "Mapped {0} items.", Items.Map.Count);
                 }
-                catch
+                catch (Exception e)
                 {
-                    Items = new GameDataMap<ushort, ItemStructure>(ItemStructure.Load(XDocument.Parse(RawObjectsXML)));
+                    hadError = true;
+                    PluginUtils.Log("GameData", "Error while reading Objects.xml file: {0}", e.Message);
                 }
-                PluginUtils.Log("GameData", "Mapped {0} items.", Items.Map.Count);
             },
             () =>
             {
                 try
                 {
                     Tiles = new GameDataMap<ushort, TileStructure>(TileStructure.Load(XDocument.Load("Tiles.xml")));
-                    PluginUtils.Log("GameData", "loaded tiles from file!");
+                    PluginUtils.Log("GameData", "Mapped {0} tiles.", Tiles.Map.Count);
                 }
-                catch
+                catch (Exception e)
                 {
-                    Tiles = new GameDataMap<ushort, TileStructure>(TileStructure.Load(XDocument.Parse(RawTilesXML)));
+                    hadError = true;
+                    PluginUtils.Log("GameData", "Error while reading Tiles.xml file: {0}", e.Message);
                 }
-                PluginUtils.Log("GameData", "Mapped {0} tiles.", Tiles.Map.Count);
             },
             () =>
             {
                 try
                 {
                     Objects = new GameDataMap<ushort, ObjectStructure>(ObjectStructure.Load(XDocument.Load("Objects.xml")));
-                    PluginUtils.Log("GameData", "loaded objects from file!");
+                    PluginUtils.Log("GameData", "Mapped {0} objects.", Objects.Map.Count);
                 }
-                catch
+                catch (Exception e)
                 {
-                    Objects = new GameDataMap<ushort, ObjectStructure>(ObjectStructure.Load(XDocument.Parse(RawObjectsXML)));
+                    hadError = true;
+                    PluginUtils.Log("GameData", "Error while reading Objects.xml file: {0}", e.Message);
                 }
-                PluginUtils.Log("GameData", "Mapped {0} objects.", Objects.Map.Count);
             },
             () =>
             {
                 try
                 {
                     Packets = new GameDataMap<byte, PacketStructure>(PacketStructure.Load(XDocument.Load("Packets.xml")));
-                    PluginUtils.Log("GameData", "loaded packets from file!");
+                    PluginUtils.Log("GameData", "Mapped {0} packets.", Packets.Map.Count);
                 }
-                catch
+                catch (Exception e)
                 {
-                    Packets = new GameDataMap<byte, PacketStructure>(PacketStructure.Load(XDocument.Parse(RawPacketsXML)));
+                    hadError = true;
+                    PluginUtils.Log("GameData", "Error while reading Packets.xml file: {0}", e.Message);
                 }
-                PluginUtils.Log("GameData", "Mapped {0} packets.", Packets.Map.Count);
             },
             () =>
             {
@@ -187,8 +180,10 @@ namespace LibKite.GameData
                 {
                     charList = XDocument.Load("https://www.realmofthemadgod.com/char/list");
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    hadError = true;
+                    PluginUtils.Log("GameData", "Error while fetching /char/list: {0}", e.Message);
                 }
 
                 // If the char list doesn't contain an error
@@ -205,7 +200,8 @@ namespace LibKite.GameData
                 // The retrieved char list contains an error and a backup char list doesn't exist
                 else
                 {
-                    PluginUtils.Log("GameData", "Error! Unable to retrieve server list.");
+                    PluginUtils.Log("GameData", "Cannot retrieve server list and no cache exists.");
+                    hadError = true;
                     return;
                 }
 
@@ -213,7 +209,14 @@ namespace LibKite.GameData
                 PluginUtils.Log("GameData", "Mapped {0} servers.", Servers.Map.Count);
             });
 
-            PluginUtils.Log("GameData", "Successfully loaded game data.");
+            if (hadError)
+            {
+                PluginUtils.Log("GameData", "One or more game data files could not be loaded.");
+            }
+            else
+            {
+                PluginUtils.Log("GameData", "Successfully loaded game data.");
+            }
         }
     }
 }
